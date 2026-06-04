@@ -3,6 +3,9 @@
 # Group Members
 Anna Kester and Will Zambito
 
+# Full Report
+View the full analysis: [report.ipynb](./report.ipynb)
+
 # Abstract
 
 This project addresses the problem of IPO underpricing, where companies often leave significant capital on the table due to first-day price surges after going public. We develop machine learning models to predict whether and IPO, prior to its opening day, is likely to be overpriced, fairly priced, or underpriced, and we also aim to estimate the magnitude of underpricing if possible. Our approach uses multiple model types, including logistic regression, XGBoost, and random forests, to capture nonlinear relationships in financial, macroeconomic, and textual features. Success will be evaluated based on predictive performance compared to baseline models, as well as the ability to identify meaningful features that contribute to IPO pricing. 
