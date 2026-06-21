@@ -1,144 +1,127 @@
-# IPOlogists
+# IPO Underpricing Prediction — ML Capstone
 
-# Group Members
-Anna Kester and Will Zambito
+**CS 0451 Machine Learning · Middlebury College · Spring 2026**
 
-# Full Report
-View the full analysis: [report.ipynb](./report.ipynb)
+A machine learning pipeline that predicts whether an IPO will be **underpriced, fairly priced, or overpriced** before opening day — combining financial data, macroeconomic indicators, and NLP-extracted signals from SEC S-1 filings.
 
-# Abstract
+---
 
-This project addresses the problem of IPO underpricing, where companies often leave significant capital on the table due to first-day price surges after going public. We develop machine learning models to predict whether and IPO, prior to its opening day, is likely to be overpriced, fairly priced, or underpriced, and we also aim to estimate the magnitude of underpricing if possible. Our approach uses multiple model types, including logistic regression, XGBoost, and random forests, to capture nonlinear relationships in financial, macroeconomic, and textual features. Success will be evaluated based on predictive performance compared to baseline models, as well as the ability to identify meaningful features that contribute to IPO pricing. 
+## The Problem
 
-# Motivation and Question
+IPO underpricing costs companies billions annually. When Airbnb went public, its stock opened at nearly double its offer price — leaving over $3 billion on the table. On average, IPOs are underpriced by 10–20%. This project asks: **can ML detect the patterns behind mispricing before trading begins?**
 
-When Airbnb went public, its stock opened at nearly double its offer price, leaving over $3 billion in potential capital. While extreme, this outcome is not unusual. IPO underpricing has been documented heavily in academic finance literature. On average, IPOs are underpriced by 10-20%, which represented billions of dollars in "money left on the table" annually. 
+---
 
-We are motivated by the idea that IPO underpricing is not purely random, but reflects patterns across different domains: deal characteristics, macroeconomics conditions, and the way firms describe themselves in regulatory filings. These relationships may be complex and nonlinear, making them well-suited for machine learning.
+## Data Sources
 
-Our central research questions are:
-- Can we predict whether an IPO will be underpriced more accurately than simply predicting it will naively?
-- What features are most indicative of an IPO being overpriced?
+| Source | Features |
+|---|---|
+| Bloomberg Terminal | Offer price, deal size, shares outstanding, industry, lead underwriter |
+| FRED API | Interest rates, CPI, unemployment — matched to each IPO date |
+| SEC EDGAR S-1 Filings | NLP-extracted risk scores, growth signals, business complexity via GPT-4o-mini |
 
-We are motivated by the quality of our data across three domains:
-- We have Bloomberg financial data for all IPO deals in the US since 2000 providing us with historical data on: Institution, Industry, Offer Price, Offer to 1st close, % Shares Out, Deal Size, and more relevant deal information.
-- Through the FRED API, we have access to macroeconomic time series including interest rate, CPI, and unemployment, which can each be matched to the IPO date to capture market conditions
-- Through SEC EDGAR, we have access to S-1 filings for hundreds of IPOs, which can be processed to extract structured signals around risk, growth narratives, and business clarity, which are rarely quantified. 
+Integrating structured financial data, macroeconomic time series, and unstructured regulatory text into a single feature pipeline was the core engineering challenge of this project.
 
-Together, these three data sources will allow us to construct a classification and regression model for IPO pricing dynamics that combine financial variables, macroeconomic context, and textual information. 
+---
 
+## Results
 
-# Planned Deliverables
-Deliverables for Full Success:
-- Python package containing all code and documentation with the following goals:
-    - Accurate classification of IPOs as underpriced, within expected range, or overpriced
-    - Magnitude prediction, as time allows
-    - Learning about and implementing multiple models effectively (Logistic Regression, Pytorch MLP, Random Forest, XGBoost)
-    - Robust feature engineering
-- A Jupyter notebook for each of our models
-- A blog post / GitHub pages site with the following
-    - Model comparison and explanation of why differences arise across models
-    - Identify key factors that lead to IPO underpricing
-    - Explanatory visualizations 
+### Binary Classification (Full Dataset, n=6,110)
 
-Deliverables for Partial Success:
-- Python package containing all code and documentation with the following goals:
-    - Working classification of IPOs as underpriced, expected, or overpriced
-    - Learning about and implementing at least 2 of the 4 planned models
-- A Jupyter notebook for each of our models
-- A well organized and presentable blog post of what we were able to accomplish
+| Model | Accuracy | Macro F1 |
+|---|---|---|
+| Logistic Regression | 58% | 0.58 |
+| Neural Network | 69% | 0.64 |
+| Random Forest | 70% | 0.65 |
+| **XGBoost** | **71%** | **0.70** |
 
-# Resources Required
+XGBoost beat the naive baseline (always predicting "underpriced" = 60% accuracy) by 11 points and was the most balanced across classes. A naive baseline that always predicts "underpriced" would achieve 60% accuracy without learning anything useful — Macro F1 tells the real story.
 
-The project required access to financial, macroeconomic, and textual data sources, as well as tools for data processing and feature extraction
+### 3-Class Classification (Full Dataset)
 
-1. IPO Financial Data (Bloomberg Terminal)
-We will use the Bloomberg Terminal provided through Middlebury College library to obtain all our historical IPO data. The data will be exported from Bloomberg into Excel/CSV format. 
+| Model | Accuracy | Macro F1 |
+|---|---|---|
+| Logistic Regression | 50% | 0.45 |
+| Neural Network | 53% | 0.51 |
+| Random Forest | 63% | 0.49 |
+| XGBoost | 60% | 0.55 |
 
-2. SEC EDGAR filings
-We will use the SEC EDGAR database to collect IPO S-1 filings. We will use the `sec-edgar-downloader` Python package. These filings will provide the textual data needed to extract our risk, growth, and business complexity features. 
-3. Macroeconomic Data (FRED API)
-Macroeconomic indicators will be obtained using the Federal Reserve Economic Data (FRED) API, which requires a [free API key](https://fred.stlouisfed.org/docs/api/fred/). 
+### Top Features (XGBoost — Binary)
 
-4. Text Feature Extraction Tools:
-To process S-1 filings, we may use:
-- OpenAI API
-- OR open-source model if costs or token limits make API usage impractical
+Offer Price dominated with an importance score of ~0.18, nearly double the next feature. Market Cap at Offer and GDP followed at ~0.09 each, with CPI and bulge-bracket underwriter status rounding out the top 5 — confirming that pricing decisions and the macro environment matter more than firm-specific characteristics.
 
-We will select our approach based on computational cost and scalability after initial experimentation. If too costly, we might revisit how to feature extract from S-1 filings. 
+### Risk Feature Impact (XGBoost on SEC S-1 Subset, n=862)
 
-5. Computing Resources
-- We believe our personal laptops or computing resources providing by the college will be enough for our data processing and modeling. 
-- We will use Google Colab for model training if we require additional computing power. 
+Adding GPT-4o-mini risk scores from S-1 filings produced small, consistent gains across precision, recall, and F1 — but no single improvement exceeded 3 percentage points. A larger dataset may reveal stronger effects.
 
+> 📓 Full confusion matrices, feature importance plots, and per-class breakdowns in [`report.ipynb`](report.ipynb)
 
-# What You Will Learn
+---
 
+## Key Technical Highlights
 
-**Will**
+- **End-to-end feature pipeline** combining structured financial data, macroeconomic time series, and unstructured text
+- **NLP feature extraction** from SEC S-1 filings using GPT-4o-mini to score regulatory risk, competitive risk, financial risk, and overall risk on a 1–10 scale
+- **Four model types** — Logistic Regression (custom PyTorch), Neural Network (custom PyTorch MLP), Random Forest (custom from scratch), and XGBoost — all trained and evaluated on identical 80/20 stratified splits
+- **Class imbalance handling** via class weights across all models (60% of IPOs underpriced in full dataset)
+- **Feature importance analysis** identifying offer price, market cap, and macro conditions as the strongest predictors
 
-I intend to deepen my understanding of how to apply machine learning models to real world financial problems, particularly in using structured and unstructured data. I want to gain experience with working with financial datasets such as IPO data and how to interpret their results in a meaningful way. I aim to learn how models such as XGBoost and Random Forest work, as well as how to implement and tune them effectively. I hope to better understand the full machine learning project lifecycle, from initial problem formulation and data cleaning to feature engineering, model training, evaluation, and hyperparameter tuning. 
+---
 
-**Anna**
+## Project Structure
 
-Through this project, I hope to gain a deeper understanding of each step involved in the implementation and project management of a machine learning project. From initial ideas, through model implementation, and final deliverables, I intend to extend what we have learned in class to a more hands-on project. I am also excited to learn new models, such as Random Forest and XGBoost, and see how their performance compares to the more basic model of logistic regression. 
+```
+ipologists/
+├── data/               # Raw and processed datasets
+├── notebooks/          # Per-model Jupyter notebooks
+├── scripts/            # Data collection (Bloomberg, FRED, SEC EDGAR)
+├── src/                # Core pipeline modules and saved models
+├── report.ipynb        # Full analysis, results, and visualizations
+└── requirements.txt
+```
 
-# Risk Statement
-Some risks to achieving the full deliverable are potential issues working with S-1 filing data. Since this data is textual, additional complications may arise in cleaning and preparing the data for training. Another potential risk is not having time for magnitude prediction if data cleaning and the implementation of the classification models takes longer than expected.
+---
 
-# Ethics Statement
+## Setup
 
-1. Intended Impact
-
-If our project is successful and deployed, we aim to democratize access to IPO analysis tools that are currently primarily available to institutional investors with access to Bloomberg terminals and large quantitative research teams. By developing a model, we hope to make IPO pricing more understandable and accessible to a broader audience. 
-
-2. Who Benefits?
-- Retail and individual investors who do not have access to Bloomberg or institutional grade IPO research.
-- Researchers that study IPO markets and could use our open-source models as a baseline
-- Companies who are considering going public that want a neutral and data-driven view of IPO pricing.
-
-3. Who may be Harmed?
-- Investors in non-US or emerging markets, since our dataset focuses on US IPOs with Bloomberg coverage, it might limit generalizability across global markets
-- Users who might misinterpret the models outputs ad financial advice. The models are being designed for educational and analytical purposes only. This could lead to misleading financial decision-making
-- Smaller firms or underrepresented sectors: our dataset and SEC EDGAR filings are biased towards larger IPOs which could lead to skewness or less accurate prediction for these less represented groups.
-
-4. Will it make the World a Better Place?
-
-We believe the project could contribute positively to society. We assume that increasing transparency in financial markets is beneficial, and making IPO pricing dynamics more understandable helps reduce information asymmetry between different types of investors. This would allow for more informed decision-making and possibly improve fairness in capital markets. We also assume that by helping explain or predicting IPO underpricing, it could lead to a reduction in mispricing and improve capital allocation in the economy. Which would lead to a more efficient market.
-
-Although  our project is not intended to make recommendations, we do highlight potential forms of algorithmic bias in our work. Because our dataset is limited to US IPOs, our model may overrepresent larger more visible companies and underrepresent smaller firms.
-
-Overall, we believe the project could improve understanding of IPO markets and make financial analysis more accessible, but its positive impacts depends on careful interpretation of the results.
-
-# Tentative Timeline
-After two weeks we plan to have preliminary models working. We plan to have our data collected and cleaned by the end of week 1 and model implementations by the end of week 2.
-After four weeks we plan to have our models and deliverable finalized. Time permitting, we will work on any extra add-ons to enhance our project.
-
-
-# Required Packages
-
-Install all dependencies with: 
 ```bash
 pip install -r requirements.txt
 ```
 
-**Mac: Required for XGBoost**
-
-The OpenMP runtime library is required to run XGBoost, it enables parallel processing across GPU cores. 
-Ps. This is why we have the os at the beginning of report.  
+**Mac only (required for XGBoost parallel processing):**
 ```bash
 brew install libomp
 ```
 
+**Create a `.env` file with your API keys:**
+```
+FRED_API_KEY=your_key
+OPENAI_API_KEY=your_key
+```
 
-This project requires the following packages beyond the standard course environment:
+---
 
-| Package | Purpose |
-|---------|---------|
-| `xgboost` | XGBoost classifier |
-| `fredapi` | FRED API for macroeconomic data |
-| `sec-edgar-downloader` |  Downloading S-1 filings from SEC EDGAR |
-| `openai` | GPT-4o-mini risk scoring |
-| `python-dotenv` | Loading API keys from .env file |
-| `bs4` | For regex expression| 
+## Quick Demo
 
+```python
+import pickle, pandas as pd
+from src.pipeline import features, prepare_xgboost
+
+full = pd.read_csv("data/final/dataset_full.csv")
+with open("src/models/saved_models/xgBoost/xgb_binary_full.pkl", "rb") as f:
+    model = pickle.load(f)
+
+_, X_test, _, y_test = prepare_xgboost(full, "underpriced", features)
+preds = model.predict(X_test)  # 71% accuracy on held-out test set
+```
+
+---
+
+## Authors
+
+[William Zambito](https://github.com/ZambitoW) · [Anna Kester](https://github.com/A-Kester)  
+Middlebury College — Computer Science & Economics
+
+---
+
+*For educational and research purposes only. Not financial advice.*
