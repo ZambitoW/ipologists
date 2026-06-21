@@ -119,7 +119,7 @@ preds = model.predict(X_test)  # 71% accuracy on held-out test set
 
 ## Authors
 
-[William Zambito](https://github.com/ZambitoW) · [Anna Kester](https://github.com/A-Kester)  
+[William Zambito](https://github.com/ZambitoW) · Anna Kester  
 Middlebury College — Computer Science & Economics
 
 ---
