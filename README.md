@@ -1,4 +1,4 @@
-# IPO Underpricing Prediction — ML Capstone
+# IPO Underpricing Prediction — ML Capstone - [Live Demo](https://ipo-predictor.vercel.app)
 
 **CS 0451 Machine Learning · Middlebury College · Spring 2026**
 
